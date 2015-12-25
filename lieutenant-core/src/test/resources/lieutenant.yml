@@ -1,0 +1,7 @@
+hello-world:
+  build: Dockerfile
+  image: myimage/hello-world
+
+hello-world-test:
+  build: Dockerfile.test
+  image: myimage/hello-world-test
