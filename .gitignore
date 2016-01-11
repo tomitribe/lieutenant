@@ -3,6 +3,7 @@
 .classpath
 .settings/
 .factorypath
+dependency-reduced-pom.xml
 
 # IntelliJ
 *.iml
