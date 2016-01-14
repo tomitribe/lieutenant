@@ -20,11 +20,14 @@ import org.gradle.util.ConfigureUtil;
 
 public class LieutenantExtension {
 
-    private String version = "1.0.0";
+    private String version = "1.0-SNAPSHOT";
     private boolean force = false;
     private String suffix;
     private String prefix;
-    private String rootDirectory = ".";
+    private String rootDirectory = null;
+    private boolean withBranch = true;
+    private boolean withTags = true;
+    private String exclusionImages = null;
 
     private DockerRegistryCredentials registryCredentials;
     DockerConfig dockerConfig;
@@ -37,6 +40,30 @@ public class LieutenantExtension {
     public void dockerConfig(Closure closure) {
         dockerConfig = new DockerConfig();
         ConfigureUtil.configure(closure, dockerConfig);
+    }
+
+    public boolean isWithBranch() {
+        return withBranch;
+    }
+
+    public void setWithBranch(boolean withBranch) {
+        this.withBranch = withBranch;
+    }
+
+    public boolean isWithTags() {
+        return withTags;
+    }
+
+    public void setWithTags(boolean withTags) {
+        this.withTags = withTags;
+    }
+
+    public String getExclusionImages() {
+        return exclusionImages;
+    }
+
+    public void setExclusionImages(String exclusionImages) {
+        this.exclusionImages = exclusionImages;
     }
 
     public String getVersion() {

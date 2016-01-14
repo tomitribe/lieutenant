@@ -4,6 +4,7 @@
 .settings/
 .factorypath
 dependency-reduced-pom.xml
+pom.xml.versionsBackup
 
 # IntelliJ
 *.iml
@@ -15,6 +16,7 @@ bin/
 # Gradle
 .gradle/
 .ivy/
+build/
 
 # Maven
 target/

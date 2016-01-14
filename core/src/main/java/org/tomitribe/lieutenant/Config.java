@@ -16,7 +16,6 @@
  */
 package org.tomitribe.lieutenant;
 
-import org.apache.commons.lang.text.StrSubstitutor;
 import org.tomitribe.lieutenant.docker.Docker;
 import org.yaml.snakeyaml.Yaml;
 

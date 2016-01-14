@@ -16,7 +16,12 @@
  */
 package org.tomitribe.lieutenant.docker;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.hamcrest.CoreMatchers;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -30,7 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-@Ignore("Needs Docker installation")
+@Ignore("Needs Docker installation and having Registry image installed and tagged as registry:2")
 public class DockerTest {
 
     private static Docker docker;

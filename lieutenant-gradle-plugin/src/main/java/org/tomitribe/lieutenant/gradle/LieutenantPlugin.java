@@ -48,8 +48,16 @@ public class LieutenantPlugin implements Plugin<Project> {
             }
         });
 
-        Map<String, Class<?>> params = new HashMap<>();
-        params.put("type", LieutenantBuildTask.class);
-        project.task(params, "lieutenantbuild");
+        final Map<String, Class<?>> buildParams = new HashMap<>();
+        buildParams.put("type", LieutenantBuildTask.class);
+        project.task(buildParams, "lieutenantbuild");
+
+        final Map<String, Class<?>> pushParams = new HashMap<>();
+        pushParams.put("type", LieutenantPushTask.class);
+        project.task(pushParams, "lieutenantpush");
+
+        final Map<String, Class<?>> purgeParams = new HashMap<>();
+        purgeParams.put("type", LieutenantPurgeTask.class);
+        project.task(purgeParams, "lieutenantpurge");
     }
 }

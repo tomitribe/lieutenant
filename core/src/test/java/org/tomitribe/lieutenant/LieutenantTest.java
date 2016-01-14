@@ -57,6 +57,8 @@ public class LieutenantTest {
         when(usernameResolver.username()).thenReturn("alex");
     }
 
+
+
     @Test
     public void shouldPurgeOldImages() {
         File configFile = new File(Thread.currentThread().getContextClassLoader()
@@ -97,6 +99,91 @@ public class LieutenantTest {
         verify(this.docker, times(0)).remove("myimage/hello-world:foo_mytag2_bar");
         verify(this.docker, times(0)).remove("myimage/hello-world:foo_myfeature2_bar");
 
+    }
+
+    @Test
+    public void shouldPushImagesFromConfigFile() {
+        File configFile = new File(Thread.currentThread().getContextClassLoader()
+                .getResource("lieutenant.yml").getFile());
+
+        Lieutenant lieutenant = new Lieutenant(this.folder.getRoot());
+        lieutenant.docker = this.docker;
+        lieutenant.git = this.git;
+
+        when(this.git.isDirty()).thenReturn(false);
+        when(this.git.currentBranch()).thenReturn("master");
+        when(this.git.trunkedLatestCommit("master")).thenReturn("1234567");
+
+        Set<String> tags = new HashSet<>();
+        tags.add("first release");
+        when(this.git.tagList("1234567")).thenReturn(tags);
+
+        when(this.docker.imageExists("myimage/hello-world", "1234567")).thenReturn(false);
+        when(this.docker.imageExists("myimage/hello-world-test", "1234567")).thenReturn(false);
+
+        final Config config = Config.readFile(configFile);
+        lieutenant.push(config);
+
+        verify(this.docker).build(new File(this.folder.getRoot(), "Dockerfile"), false, "myimage/hello-world", "1234567");
+        verify(this.docker).build(new File(this.folder.getRoot(), "mytest/Dockerfile.test"), false, "myimage/hello-world-test", "1234567");
+
+        verify(this.docker).tag("myimage/hello-world", "1234567", "master");
+        verify(this.docker).tag("myimage/hello-world-test", "1234567", "master");
+
+        verify(this.docker).tag("myimage/hello-world", "1234567", "first_release");
+        verify(this.docker).tag("myimage/hello-world-test", "1234567", "first_release");
+
+        verify(this.docker).push("myimage/hello-world:1234567");
+        verify(this.docker).push("myimage/hello-world:master");
+        verify(this.docker).push("myimage/hello-world:first_release");
+
+        verify(this.docker).push("myimage/hello-world-test:1234567");
+        verify(this.docker).push("myimage/hello-world-test:master");
+        verify(this.docker).push("myimage/hello-world-test:first_release");
+    }
+
+    @Test
+    public void shouldPushOnlyImagesMatchesRegExpFromConfigFile() {
+        File configFile = new File(Thread.currentThread().getContextClassLoader()
+                .getResource("lieutenant.yml").getFile());
+
+        Lieutenant lieutenant = new Lieutenant(this.folder.getRoot());
+        lieutenant.docker = this.docker;
+        lieutenant.git = this.git;
+
+        when(this.git.isDirty()).thenReturn(false);
+        when(this.git.currentBranch()).thenReturn("master");
+        when(this.git.trunkedLatestCommit("master")).thenReturn("1234567");
+
+        Set<String> tags = new HashSet<>();
+        tags.add("first release");
+        when(this.git.tagList("1234567")).thenReturn(tags);
+
+        when(this.docker.imageExists("myimage/hello-world", "1234567")).thenReturn(false);
+        when(this.docker.imageExists("myimage/hello-world-test", "1234567")).thenReturn(false);
+
+        final Config config = Config.readFile(configFile);
+        LieutenantConfig lieutenantConfig = new LieutenantConfig();
+        lieutenantConfig.setExclusionImagesPattern(".*test.*");
+        config.setLieutenantConfig(lieutenantConfig);
+        lieutenant.push(config);
+
+        verify(this.docker).build(new File(this.folder.getRoot(), "Dockerfile"), false, "myimage/hello-world", "1234567");
+        verify(this.docker).build(new File(this.folder.getRoot(), "mytest/Dockerfile.test"), false, "myimage/hello-world-test", "1234567");
+
+        verify(this.docker).tag("myimage/hello-world", "1234567", "master");
+        verify(this.docker).tag("myimage/hello-world-test", "1234567", "master");
+
+        verify(this.docker).tag("myimage/hello-world", "1234567", "first_release");
+        verify(this.docker).tag("myimage/hello-world-test", "1234567", "first_release");
+
+        verify(this.docker).push("myimage/hello-world:1234567");
+        verify(this.docker).push("myimage/hello-world:master");
+        verify(this.docker).push("myimage/hello-world:first_release");
+
+        verify(this.docker, times(0)).push("myimage/hello-world-test:1234567");
+        verify(this.docker, times(0)).push("myimage/hello-world-test:master");
+        verify(this.docker, times(0)).push("myimage/hello-world-test:first_release");
     }
 
     @Test

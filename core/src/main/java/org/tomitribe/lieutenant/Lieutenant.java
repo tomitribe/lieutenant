@@ -16,7 +16,6 @@
  */
 package org.tomitribe.lieutenant;
 
-import com.github.dockerjava.api.model.Image;
 import org.tomitribe.lieutenant.docker.Docker;
 import org.tomitribe.lieutenant.docker.DockerfileFinder;
 import org.tomitribe.lieutenant.git.Git;
@@ -25,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,6 +45,35 @@ public class Lieutenant {
     public Lieutenant(File home) {
         this.home = home;
         this.usernameResolver = new UsernameResolver();
+    }
+
+    public void push(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
+        Set<String> createdImages = this.build(lieutenantConfig, dockerConfig);
+
+        pushImages(lieutenantConfig, dockerConfig, createdImages);
+    }
+
+    public void push(Config config) {
+        Set<String> createdImages = this.build(config);
+
+        pushImages(config.getLieutenantConfig(), config.getDockerConfig(), createdImages);
+    }
+
+    private void pushImages(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig, Set<String> createdImages) {
+        if (this.docker == null) {
+            this.docker = dockerConfig.build();
+        }
+
+        Pattern imagePattern = lieutenantConfig.getExclusionImagesPattern();
+        for (String image : createdImages) {
+            if (imagePattern != null) {
+                if (!imagePattern.matcher(image).matches()) {
+                    this.docker.push(image);
+                }
+            } else {
+                this.docker.push(image);
+            }
+        }
     }
 
     public void purge(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
@@ -108,6 +135,7 @@ public class Lieutenant {
         tag:
         for (Iterator<String> currentFullTagIterator = currentTags.iterator(); currentFullTagIterator.hasNext(); ) {
             String currentFullTag = currentFullTagIterator.next();
+
             if (isTagMatched(currentFullTag, imageName, currentCommit)) {
                 continue;
             }
@@ -140,11 +168,11 @@ public class Lieutenant {
     }
 
     private boolean isTagMatched(String currentTag, String image, String tag) {
-        final Pattern pattern = Pattern.compile(image + ":.*_" + tag + "_.*");
+        final Pattern pattern = Pattern.compile(image + ":.*(_?)" + tag + "(_?).*");
         return pattern.matcher(currentTag).matches();
     }
 
-    public void build(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
+    public Set<String> build(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
 
         Config config = new Config();
         config.setLieutenantConfig(lieutenantConfig);
@@ -157,7 +185,7 @@ public class Lieutenant {
             config.addApplication(dockerfile.toString(), application);
         }
 
-        this.build(config);
+        return this.build(config);
     }
 
     private Set<Path> getDockerfileLocations() {
@@ -177,8 +205,9 @@ public class Lieutenant {
         return relativeDockerfiles;
     }
 
-    public void build(Config config) {
+    public Set<String> build(Config config) {
 
+        final Set<String> createdImages = new HashSet<>();
         final Set<String> applicationsName = config.getApplicationsName();
 
         if (this.docker == null) {
@@ -193,7 +222,7 @@ public class Lieutenant {
 
                 // If no Git repo exist
                 logger.log(Level.INFO, "No local git repository found, just building latest");
-                buildImage(this.docker, application, config, "latest");
+                createdImages.add(buildImage(this.docker, application, config, "latest"));
 
             } else {
 
@@ -205,7 +234,7 @@ public class Lieutenant {
                 if (isDirty(this.git)) {
 
                     logger.log(Level.INFO, "No local git repository found, just building latest");
-                    buildImage(this.docker, application, config, "latest");
+                    createdImages.add(buildImage(this.docker, application, config, "latest"));
 
                 } else {
 
@@ -220,22 +249,24 @@ public class Lieutenant {
 
                         logger.log(Level.INFO, "Git repo is clean and image can be built.");
 
-                        buildImage(this.docker, application, config, rev);
+                        createdImages.add(buildImage(this.docker, application, config, rev));
                         if (config.withBranch()) {
-                            tagImage(this.docker, application, rev, config, getBranch(this.git));
+                            createdImages.add(tagImage(this.docker, application, rev, config, getBranch(this.git)));
                         }
 
                         if (config.withTags()) {
                             Set<String> currentTags = currentTags(this.git);
 
                             for (String currentTag : currentTags) {
-                                tagImage(this.docker, application, rev, config, currentTag);
+                                createdImages.add(tagImage(this.docker, application, rev, config, currentTag));
                             }
                         }
                     }
                 }
             }
         }
+
+        return Collections.unmodifiableSet(createdImages);
     }
 
     private String tagImage(Docker docker, Application application, String rev, Config config, String tag) {

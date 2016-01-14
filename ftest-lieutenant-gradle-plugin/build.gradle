@@ -1,0 +1,28 @@
+apply plugin: 'java'
+
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.tomitribe:lieutenant-gradle-plugin:1.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'org.tomitribe.lieutenant.plugin'
+
+lieutenant {
+    prefix = 'foo'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.13'
+
+    testCompile 'junit:junit:4.12'
+}

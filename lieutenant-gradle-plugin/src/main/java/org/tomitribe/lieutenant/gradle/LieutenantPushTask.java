@@ -23,12 +23,12 @@ import org.tomitribe.lieutenant.LieutenantConfig;
 
 import java.io.File;
 
-public class LieutenantBuildTask extends DefaultTask {
+public class LieutenantPushTask extends DefaultTask {
 
     private LieutenantExtension extension;
 
     @TaskAction
-    public void build() {
+    public void push() {
         extension = getProject().getExtensions().findByType(LieutenantExtension.class);
 
         if (extension == null) {
@@ -48,13 +48,12 @@ public class LieutenantBuildTask extends DefaultTask {
             config.setDockerConfig(ConfigUtil.toDockerConfig(extension));
             config.setLieutenantConfig(lieutenantConfig);
 
-            lieutenant.build(config);
+            lieutenant.push(config);
 
         } else {
             LieutenantConfig lieutenantConfig = ConfigUtil.toLieutenantConfig(extension);
-            lieutenant.build(lieutenantConfig, ConfigUtil.toDockerConfig(extension));
+            lieutenant.push(lieutenantConfig, ConfigUtil.toDockerConfig(extension));
         }
 
     }
-
 }

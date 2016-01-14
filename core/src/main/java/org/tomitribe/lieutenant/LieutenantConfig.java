@@ -18,6 +18,8 @@ package org.tomitribe.lieutenant;
 
 import org.apache.commons.lang.text.StrSubstitutor;
 
+import java.util.regex.Pattern;
+
 public class LieutenantConfig {
 
     private boolean force;
@@ -25,6 +27,7 @@ public class LieutenantConfig {
     private String suffix;
     private boolean withBranches = true;
     private boolean withTags = true;
+    private Pattern exclusionImages = null;
 
     public boolean isForce() {
         return force;
@@ -66,5 +69,19 @@ public class LieutenantConfig {
 
     public void setWithTags(boolean withTags) {
         this.withTags = withTags;
+    }
+
+    public void setExclusionImagesPattern(String pattern) {
+        if (pattern != null) {
+            this.exclusionImages = Pattern.compile(pattern);
+        }
+    }
+
+    public Pattern getExclusionImagesPattern() {
+        return this.exclusionImages;
+    }
+
+    public boolean isPatternDefinedForPushingImages() {
+        return this.exclusionImages != null;
     }
 }

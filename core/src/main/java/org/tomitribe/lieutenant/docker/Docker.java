@@ -40,7 +40,7 @@ public class Docker {
     private final static Logger log = Logger.getLogger(Docker.class.getName());
 
     private DockerClientConfig dockerClientConfig;
-    private DockerClient dockerClient;
+    protected DockerClient dockerClient;
 
     private Docker(DockerClientConfig dockerClientConfig) {
         this.dockerClientConfig = dockerClientConfig;
@@ -49,19 +49,16 @@ public class Docker {
                 .build();
     }
 
-    public void push(final Set<String> images) {
+    public void push(final String image) {
 
-        for (String image : images) {
-            String finalImageName = image;
-            if (image.indexOf('/') < 0) {
-                finalImageName = this.dockerClientConfig.getUsername() + "/" + image;
-            }
-
-            log.log(Level.INFO, String.format("Pushing Image %s", image));
-            this.dockerClient.pushImageCmd(finalImageName).exec(new PushImageResultCallback()).awaitSuccess();
-            log.log(Level.INFO, String.format("Pushed Image %s", image));
-
+        String finalImageName = image;
+        if (image.indexOf('/') < 0) {
+            finalImageName = this.dockerClientConfig.getUsername() + "/" + image;
         }
+
+        log.log(Level.INFO, String.format("Pushing Image %s", image));
+        this.dockerClient.pushImageCmd(finalImageName).exec(new PushImageResultCallback()).awaitSuccess();
+        log.log(Level.INFO, String.format("Pushed Image %s", image));
 
     }
 
@@ -72,7 +69,7 @@ public class Docker {
                 .withNoCache(noCache)
                 .withTag(getTag(image, tag)).exec(new BuildImageResultCallback()).awaitImageId();
 
-        log.log(Level.INFO, String.format("Built Image %s:%s with id %s", image, tag,id));
+        log.log(Level.INFO, String.format("Built Image %s:%s with id %s", image, tag, id));
     }
 
     public void tag(String image, String origin, String tag) {
@@ -82,7 +79,7 @@ public class Docker {
     }
 
     public Set<String> listImages(String imageName) {
-        log.log(Level.FINER, String.format("Finding image %s", imageName));
+        log.log(Level.INFO, String.format("Finding image %s", imageName));
 
         Set<Image> matchImages = new HashSet<>();
 
@@ -98,7 +95,7 @@ public class Docker {
         }
 
         final Set<String> currentTags = new HashSet<>();
-        for (Image image : images) {
+        for (Image image : matchImages) {
             currentTags.addAll(Arrays.asList(image.getRepoTags()));
         }
         return Collections.unmodifiableSet(currentTags);
@@ -139,7 +136,7 @@ public class Docker {
         log.log(Level.INFO, String.format("Removing image %s:%s", image, tag));
         try {
             this.dockerClient.removeImageCmd(getTag(image, tag)).exec();
-        } catch(NotFoundException e) {
+        } catch (NotFoundException e) {
             log.log(Level.FINER, String.format("Image %s:%s already removed.", image, tag));
         }
     }
@@ -149,7 +146,7 @@ public class Docker {
         log.log(Level.INFO, String.format("Removing image %s", imageWithTag));
         try {
             this.dockerClient.removeImageCmd(imageWithTag).exec();
-        } catch(NotFoundException e) {
+        } catch (NotFoundException e) {
             log.log(Level.FINER, String.format("Image %s already removed.", imageWithTag));
         }
     }

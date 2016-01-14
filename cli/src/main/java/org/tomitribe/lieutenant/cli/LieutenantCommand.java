@@ -21,6 +21,7 @@ import org.tomitribe.crest.api.Default;
 import org.tomitribe.crest.api.Option;
 import org.tomitribe.lieutenant.Config;
 import org.tomitribe.lieutenant.Lieutenant;
+import org.tomitribe.lieutenant.LieutenantConfig;
 import org.tomitribe.lieutenant.docker.Docker;
 
 import java.io.File;
@@ -31,8 +32,8 @@ import java.util.Properties;
 public class LieutenantCommand {
 
     @Command
-    public void build(@Option("force") @Default("false") boolean force,
-                      @Option("prefix") String prefix, @Option("suffix") String suffix,
+    public void purge(@Option("withBranch") @Default("true") boolean withBranch,
+                      @Option("withTags") @Default("true") boolean withTags,
                       @Option("dockerproperties") File dockerProperties) throws IOException {
 
         final File currentDir = new File(".");
@@ -45,19 +46,101 @@ public class LieutenantCommand {
         if (lieutenantFile.exists()) {
 
             Config config = Config.readFile(lieutenantFile);
-            config.setForce(force);
-            config.setSuffix(suffix);
-            config.setPrefix(prefix);
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(null, null, withBranch, withTags,
+                    null);
+
             config.setDockerConfig(dockerConfig);
+            config.setLieutenantConfig(lieutenantConfig);
+
+            lieutenant.purge(config);
+
+        } else {
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(null, null, withBranch, withTags,
+                    null);
+
+            lieutenant.purge(lieutenantConfig, dockerConfig);
+        }
+
+    }
+
+    @Command
+    public void push(@Option("force") @Default("false") boolean force,
+                      @Option("prefix") String prefix, @Option("suffix") String suffix,
+                      @Option("withBranch") @Default("true") boolean withBranch,
+                      @Option("withTags") @Default("true") boolean withTags,
+                      @Option("exclusionImages") String exclusionImages,
+                      @Option("dockerproperties") File dockerProperties) throws IOException {
+
+        final File currentDir = new File(".");
+        final File lieutenantFile = new File(currentDir, "lieutenant.yml");
+
+        Docker.DockerConfig dockerConfig = loadDockerProperties(dockerProperties);
+
+        Lieutenant lieutenant = new Lieutenant(currentDir);
+
+        if (lieutenantFile.exists()) {
+
+            Config config = Config.readFile(lieutenantFile);
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(prefix, suffix, withBranch, withTags,
+                    exclusionImages);
+
+            config.setDockerConfig(dockerConfig);
+            config.setLieutenantConfig(lieutenantConfig);
+
+            lieutenant.push(config);
+
+        } else {
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(prefix, suffix, withBranch, withTags,
+                    exclusionImages);
+
+            lieutenant.push(lieutenantConfig, dockerConfig);
+        }
+
+    }
+
+    @Command
+    public void build(@Option("force") @Default("false") boolean force,
+                      @Option("prefix") String prefix, @Option("suffix") String suffix,
+                      @Option("withBranch") @Default("true") boolean withBranch,
+                      @Option("withTags") @Default("true") boolean withTags,
+                      @Option("dockerproperties") File dockerProperties) throws IOException {
+
+        final File currentDir = new File(".");
+        final File lieutenantFile = new File(currentDir, "lieutenant.yml");
+
+        Docker.DockerConfig dockerConfig = loadDockerProperties(dockerProperties);
+
+        Lieutenant lieutenant = new Lieutenant(currentDir);
+
+        if (lieutenantFile.exists()) {
+
+            Config config = Config.readFile(lieutenantFile);
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(prefix, suffix, withBranch, withTags,
+                    null);
+
+            config.setDockerConfig(dockerConfig);
+            config.setLieutenantConfig(lieutenantConfig);
 
             lieutenant.build(config);
 
         } else {
+            LieutenantConfig lieutenantConfig = getLieutenantConfig(prefix, suffix, withBranch, withTags,
+                    null);
 
-            lieutenant.build(force, prefix, suffix, dockerConfig);
-
+            lieutenant.build(lieutenantConfig, dockerConfig);
         }
 
+    }
+
+    private LieutenantConfig getLieutenantConfig(String prefix, String suffix,
+                                                 boolean withBranch, boolean withTags, String exclusionImages) {
+        LieutenantConfig lieutenantConfig = new LieutenantConfig();
+        lieutenantConfig.setExclusionImagesPattern(exclusionImages);
+        lieutenantConfig.setWithBranches(withBranch);
+        lieutenantConfig.setWithTags(withTags);
+        lieutenantConfig.setSuffix(suffix);
+        lieutenantConfig.setPrefix(prefix);
+        return lieutenantConfig;
     }
 
     private Docker.DockerConfig loadDockerProperties(File dockerProperties) throws IOException {
