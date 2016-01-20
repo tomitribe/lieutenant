@@ -88,4 +88,12 @@
         </dependency>
     </dependencies>
 
+    <distributionManagement>
+        <repository>
+            <id>bintray-lordofthejars-lieutenant</id>
+            <name>lordofthejars-lieutenant</name>
+            <url>https://api.bintray.com/maven/lordofthejars/lieutenant/lieutenant/;publish=1</url>
+        </repository>
+    </distributionManagement>
+
 </project>

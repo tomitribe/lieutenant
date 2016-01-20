@@ -7,7 +7,7 @@ buildscript {
         mavenLocal()
     }
     dependencies {
-        classpath 'org.tomitribe:lieutenant-gradle-plugin:1.0-SNAPSHOT'
+        classpath 'org.tomitribe:lieutenant-gradle-plugin:1.0'
     }
 }
 
@@ -25,4 +25,11 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.13'
 
     testCompile 'junit:junit:4.12'
+}
+
+task print(dependsOn:'lieutenantbuild') << {
+    println 'Printing Docker images'
+    project.ext.lieutenantImages.each {
+        println "${it}"
+    }
 }

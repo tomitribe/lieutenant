@@ -47,19 +47,22 @@ public class Lieutenant {
         this.usernameResolver = new UsernameResolver();
     }
 
-    public void push(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
+    public Set<String> push(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {
         Set<String> createdImages = this.build(lieutenantConfig, dockerConfig);
 
-        pushImages(lieutenantConfig, dockerConfig, createdImages);
+        return pushImages(lieutenantConfig, dockerConfig, createdImages);
     }
 
-    public void push(Config config) {
+    public Set<String> push(Config config) {
         Set<String> createdImages = this.build(config);
 
-        pushImages(config.getLieutenantConfig(), config.getDockerConfig(), createdImages);
+        return pushImages(config.getLieutenantConfig(), config.getDockerConfig(), createdImages);
     }
 
-    private void pushImages(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig, Set<String> createdImages) {
+    private Set<String> pushImages(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig, Set<String> createdImages) {
+
+        final Set<String> pushedImages = new HashSet<>();
+
         if (this.docker == null) {
             this.docker = dockerConfig.build();
         }
@@ -69,11 +72,15 @@ public class Lieutenant {
             if (imagePattern != null) {
                 if (!imagePattern.matcher(image).matches()) {
                     this.docker.push(image);
+                    pushedImages.add(image);
                 }
             } else {
                 this.docker.push(image);
+                pushedImages.add(image);
             }
         }
+
+        return pushedImages;
     }
 
     public void purge(LieutenantConfig lieutenantConfig, Docker.DockerConfig dockerConfig) {

@@ -22,6 +22,9 @@ import org.tomitribe.lieutenant.Lieutenant;
 import org.tomitribe.lieutenant.LieutenantConfig;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class LieutenantBuildTask extends DefaultTask {
 
@@ -39,6 +42,7 @@ public class LieutenantBuildTask extends DefaultTask {
         final Lieutenant lieutenant = new Lieutenant(projectRoot);
 
         final File lieutenantFile = new File(projectRoot, "lieutenant.yml");
+        final List<String> build = new ArrayList<>();
 
         if (lieutenantFile.exists()) {
 
@@ -48,13 +52,14 @@ public class LieutenantBuildTask extends DefaultTask {
             config.setDockerConfig(ConfigUtil.toDockerConfig(extension));
             config.setLieutenantConfig(lieutenantConfig);
 
-            lieutenant.build(config);
+            build.addAll(lieutenant.build(config));
 
         } else {
             LieutenantConfig lieutenantConfig = ConfigUtil.toLieutenantConfig(extension);
-            lieutenant.build(lieutenantConfig, ConfigUtil.toDockerConfig(extension));
+            build.addAll(lieutenant.build(lieutenantConfig, ConfigUtil.toDockerConfig(extension)));
         }
 
+        getProject().getExtensions().getExtraProperties().set("lieutenantImages", Collections.unmodifiableList(build));
     }
 
 }
