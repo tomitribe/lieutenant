@@ -18,11 +18,8 @@ package org.tomitribe.lieutenant.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.command.PullImageResultCallback;
-import org.hamcrest.CoreMatchers;
+import com.github.dockerjava.core.command.PushImageResultCallback;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -47,8 +44,33 @@ public class DockerTest {
         final String certPath = System.getProperty("user.home") + "/.docker/machine/machines/dev";
         properties.put("docker.io.dockerCertPath", certPath);
 
+        properties.put("docker.io.username", "lordofthejars");
+        properties.put("docker.io.password", "");
+        properties.put("docker.io.email", "asotobu@gmail.com");
+        properties.put("docker.io.serverAddress", "lordofthejars-docker-continuous_delivery.bintray.io");
+
         Docker.DockerConfig dockerConfig = new Docker.DockerConfig();
         docker = dockerConfig.withProperties(properties).build();
+    }
+
+    @Test
+    public void shouldPushToBintray() {
+        final DockerClient dockerClient = docker.dockerClient;
+        CreateContainerResponse container = dockerClient.createContainerCmd("busybox").withCmd("true").exec();
+
+        final String repository = "lordofthejars-docker-continuous_delivery.bintray.io/lordofthejars/javatest";
+        String imageId = dockerClient.commitCmd(container.getId())
+                .withRepository(repository)
+                .withTag("latest")
+                .exec();
+
+        dockerClient.pushImageCmd(repository).withTag("latest").exec(new PushImageResultCallback()).awaitSuccess();
+
+        dockerClient.removeImageCmd(imageId).exec();
+
+        dockerClient.pullImageCmd(repository)
+                    .withTag("latest").exec(new PullImageResultCallback()).awaitSuccess();
+
     }
 
     @Test
