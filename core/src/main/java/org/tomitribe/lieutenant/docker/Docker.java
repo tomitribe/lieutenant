@@ -343,6 +343,19 @@ public class Docker {
                     } else {
                         name = image;
                     }
+                    break;
+                }
+                default:
+                {
+                    String imageName = parts[2];
+                    final int colonIndex = imageName.indexOf(':');
+                    if (colonIndex > -1) {
+                        name = parts[0] + "/" + parts[1] + "/" + imageName.substring(0, colonIndex);
+                        tag = imageName.substring(colonIndex + 1);
+                    } else {
+                        name = image;
+                    }
+                    break;
                 }
             }
 
